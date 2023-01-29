@@ -1,33 +1,40 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Security.Cryptography;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XInput;
+using static UnityEngine.InputSystem.InputAction;
 using static UnityEngine.RuleTile.TilingRuleOutput;
 
 public class PlayerController : MonoBehaviour
 {
+    public float maxMagnitude = 5;
+    public float acceleration = 0.5f;
+    public float deceleration = 0.3f;
+    public float turnCoeff = 0.4f;
+    public float forwardSpeed = 0f;
+    public float backwardSpeed = 0f;
 
-    private Rigidbody2D rigidBody;
-    public PlayerInput playerInput;
+    Rigidbody2D _rigidBody;
+    float _turnAngle = 0f;
 
-    public float maxMagnitude = 60;
-    public float acceleration = 1;
-    public float deceleration = 1f;
-
-    private Vector2 input = Vector2.zero;
+    [SerializeField] 
+    UnityEvent _moveTrigger; 
 
     private void Awake()
     {
-        rigidBody = GetComponent<Rigidbody2D>();
+        _rigidBody = GetComponent<Rigidbody2D>();
+        _rigidBody.interpolation = RigidbodyInterpolation2D.Interpolate;
     }
 
     // Start is called before the first frame update
     void Start()
-    {   
-        
+    {
     }
 
     // Update is called once per frame
@@ -38,38 +45,58 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        float forwardSpeed = input.y * acceleration;
-
         if (forwardSpeed == 0)
         {
-            if (Mathf.Abs(rigidBody.velocity.magnitude) < deceleration)
+            if (Mathf.Abs(_rigidBody.velocity.magnitude) < deceleration)
             {
-                rigidBody.velocity = Vector2.zero;
+                _rigidBody.velocity = Vector2.zero;
             }
             else
             {
-                rigidBody.velocity -= Vector2.ClampMagnitude(rigidBody.velocity, deceleration);
+                _rigidBody.velocity -= Vector2.ClampMagnitude(_rigidBody.velocity, deceleration);
             }
         }
         else
         {
-            rigidBody.velocity = Vector2.ClampMagnitude(rigidBody.velocity + (Vector2)transform.up * forwardSpeed, maxMagnitude);
+            _rigidBody.velocity = Vector2.ClampMagnitude(_rigidBody.velocity + (Vector2)transform.up * forwardSpeed * acceleration, maxMagnitude);
         }
 
-        if (rigidBody.velocity.magnitude > 0) {
-            float steeringAngle = input.x * -10f;
-            transform.Rotate(new Vector3(0, 0, steeringAngle));
+        if (_rigidBody.velocity.magnitude > 0) {
+            Vector2 steering = _rigidBody.velocity;
+            float steeringAngle = _turnAngle * turnCoeff;
+            steering = Vector2Extensions.RotateRet(steering, -Mathf.Deg2Rad * steeringAngle); 
+
+            _rigidBody.velocity = Vector2.ClampMagnitude(_rigidBody.velocity + steering, _rigidBody.velocity.magnitude);
+            _rigidBody.transform.up = _rigidBody.velocity;
+            _moveTrigger.Invoke();
         }
 
     }
 
     private void OnDrawGizmos()
     {
-        Gizmos.DrawLine(rigidBody.position, rigidBody.position+rigidBody.velocity);    
+        //if (EditorApplication.isPlaying)
+        //{
+        //    Gizmos.DrawLine(_rigidBody.position, _rigidBody.position + _rigidBody.velocity);
+        //}
     }
 
-    public void Move(InputAction.CallbackContext callbackContext)
+    public void Accelerate(InputAction.CallbackContext callbackContext)
     {
-        input = callbackContext.ReadValue<Vector2>();
+        forwardSpeed = callbackContext.ReadValue<float>(); 
+    }
+
+    public void Decelerate(InputAction.CallbackContext callbackContext)
+    {
+        //Do not brake or go backward if player is already accelerating
+        if (forwardSpeed == 0)
+        {
+            backwardSpeed = callbackContext.ReadValue<float>();
+        }
+    }
+
+    public void Turn(InputAction.CallbackContext callbackContext)
+    {
+        _turnAngle = Mathf.Clamp(Vector2.SignedAngle(callbackContext.ReadValue<Vector2>(), Vector2.up), -30, +30);
     }
 }
