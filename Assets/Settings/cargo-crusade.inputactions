@@ -34,21 +34,21 @@
                 },
                 {
                     "name": "Accelerate",
-                    "type": "Button",
+                    "type": "Value",
                     "id": "b6dd488c-7748-4fc7-ac9e-ce809e51fa8e",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 },
                 {
                     "name": "Decelerate",
-                    "type": "Button",
+                    "type": "Value",
                     "id": "8845d140-b314-4d97-b4e3-79b8e4e03b27",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -232,7 +232,7 @@
                     "name": "",
                     "id": "d2915fac-1b2a-401f-b6fe-23049b5fb808",
                     "path": "<Gamepad>/rightTrigger",
-                    "interactions": "Press",
+                    "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "Accelerate",
@@ -276,7 +276,7 @@
                     "name": "",
                     "id": "dd074cd3-6e68-49cf-b84f-f5b984281a69",
                     "path": "<Gamepad>/leftTrigger",
-                    "interactions": "Press",
+                    "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "Decelerate",
