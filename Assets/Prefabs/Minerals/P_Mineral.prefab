@@ -124,17 +124,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8009d3e19b2dca45a6ea42aa3e9f356, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _filter:
-    useTriggers: 0
-    useLayerMask: 0
-    useDepth: 0
-    useOutsideDepth: 0
-    useNormalAngle: 0
-    useOutsideNormalAngle: 0
-    layerMask:
-      serializedVersion: 2
-      m_Bits: 8
-    minDepth: 0
-    maxDepth: 0
-    minNormalAngle: 0
-    maxNormalAngle: 0
+  interactIcon: {fileID: 0}
