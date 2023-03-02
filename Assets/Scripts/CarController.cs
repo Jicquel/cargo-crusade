@@ -5,21 +5,23 @@ using System.Collections.Generic;
 using UnityEditor;
 #endif
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
-
-// TODO: 
-// -Add small brake when drifting
-// -Add inertia related to a mass value (maybe juste change mass of rigidbody)
-// -Add max reverse speed
+//Todo : Brake induced by drifting -> Limit max speed while difting
 
 public class CarController : MonoBehaviour
 {
     public Rigidbody2D rigidBody;
+    [SerializeField]
+    UnityEvent _moveTrigger;
 
     [Header( "Engine" )]
     public float maxSpeed = 10;
     public float accelerationFactor = 5.0f;
+    public float maxReverseSpeed = 5;
+    public float reverseFactor = 2.0f;
+    public float brakeFactor = 10;
     [SerializeField]
     float _currentSpeed;
 
@@ -27,11 +29,13 @@ public class CarController : MonoBehaviour
     [Header( "Steering" )]
     public float turnFactor = 0.1f;
     public float turnFactorWhileDrifting = 0.3f;
+    public float carRotationSpeed = 1;
 
     [Space()]
     [Header( "Drifting" )]
     public float driftFactor = 0.95f;
     public float noneDriftFactor = 0.2f;
+    public float driftBrakeFactor = 6;
     [SerializeField]
     bool _isDrifting;
     [SerializeField]
@@ -43,13 +47,20 @@ public class CarController : MonoBehaviour
     public float wheelsRotationSpeed = 0.5f;
     public TrailRenderer[] skidMarkTrails;
 
+    public Vector2 Velocity { get => rigidBody.velocity; }
+
     float _rotationAngle = 0;
 
     float _forwardInput, _brakeInput, _turnAngle;
 
     Vector2 _engineForce, _brakeForce;
 
-    private void Update ()
+    void Start ()
+    {
+        _rotationAngle = rigidBody.rotation;
+    }
+
+    void Update ()
     {
         ApplyTurnAngleToWheels();
     }
@@ -67,6 +78,11 @@ public class CarController : MonoBehaviour
         ReduceDriftForce();
 
         LimitMaxVelocity();
+
+        if ( rigidBody.velocity.magnitude > 0 )
+        {
+            _moveTrigger?.Invoke();
+        }
 
         _currentDriftFactor = Mathf.Lerp( _currentDriftFactor, ( _isDrifting ) ? driftFactor : noneDriftFactor, 0.1f );
 
@@ -109,7 +125,7 @@ public class CarController : MonoBehaviour
 
     void LimitMaxVelocity ()
     {
-        rigidBody.velocity = Vector2.ClampMagnitude( rigidBody.velocity, maxSpeed );
+        rigidBody.velocity = Vector2.ClampMagnitude( rigidBody.velocity, IsGoingForward() ? maxSpeed : maxReverseSpeed );
     }
 
     void ApplyDrag ()
@@ -133,7 +149,16 @@ public class CarController : MonoBehaviour
 
     void ApplyBrakeForce ()
     {
-        _brakeForce = _brakeInput * accelerationFactor * -transform.up;
+        if ( IsGoingForward() )
+        {
+            _brakeForce = _brakeInput * brakeFactor * -transform.up;
+
+            _brakeForce += ( _isDrifting ? 1 : 0 ) * driftBrakeFactor * -(Vector2)transform.up;
+        }
+        else
+        {
+            _brakeForce = _brakeInput * reverseFactor * -transform.up;
+        }
 
         rigidBody.AddForce( _brakeForce, ForceMode2D.Force );
     }
@@ -144,12 +169,12 @@ public class CarController : MonoBehaviour
 
         float turn = ( _isDrifting ) ? turnFactorWhileDrifting : turnFactor;
 
-        if ( Vector2.Dot( rigidBody.velocity.normalized, transform.up ) < 0 )
-            _rotationAngle -= -_turnAngle * turn * minSpeedTurn;
-        else
+        if ( IsGoingForward() )
             _rotationAngle -= _turnAngle * turn * minSpeedTurn;
+        else
+            _rotationAngle -= -_turnAngle * turn * minSpeedTurn;
 
-        rigidBody.MoveRotation( _rotationAngle );
+        rigidBody.MoveRotation( Mathf.LerpAngle( rigidBody.rotation, _rotationAngle, Time.fixedDeltaTime * carRotationSpeed ) );
     }
 
     void ReduceDriftForce ()
@@ -158,6 +183,31 @@ public class CarController : MonoBehaviour
         Vector2 rightVelocity = transform.right * Vector2.Dot( rigidBody.velocity, transform.right );
 
         rigidBody.velocity = forwardVelocity + rightVelocity * _currentDriftFactor;
+    }
+
+    bool IsGoingForward ()
+    {
+        return Vector2.Dot( rigidBody.velocity.normalized, transform.up ) >= 0;
+    }
+
+    public void SetForwardInput ( float a_input )
+    {
+        _forwardInput = a_input;
+    }
+
+    public void SetBrakeInput ( float a_input )
+    {
+        _brakeInput = a_input;
+    }
+
+    public void SetTurnAngle ( float a_angle )
+    {
+        _turnAngle = Mathf.Clamp( a_angle, -30, 30 );
+    }
+
+    public void SetDriftInput ( bool a_input )
+    {
+        _isDrifting = a_input;
     }
 
     public void Accelerate ( InputAction.CallbackContext a_context )
