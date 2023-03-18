@@ -140,7 +140,8 @@ public class PlayerController : MonoBehaviour
     private void UpdateMostCloseInteractable()
     {
         Interactable mostCloseInteractable = GetMostCloseInteractableInRange();
-        if(mostCloseInteractable != _mostCloseInteractable) { 
+
+        if(mostCloseInteractable != _mostCloseInteractable) {
             _mostCloseInteractable?.DisableInteractIcon();
             _mostCloseInteractable = mostCloseInteractable;
             _mostCloseInteractable?.EnableInteractIcon();
@@ -150,7 +151,7 @@ public class PlayerController : MonoBehaviour
     public void Interact(InputAction.CallbackContext callbackContext) {
         if(_mostCloseInteractable != null)
         {
-            _mostCloseInteractable.Interact();
+            _mostCloseInteractable = _mostCloseInteractable.Interact();
         }
     }
 

@@ -4,24 +4,13 @@ using UnityEngine;
 
 public class MineralController : Interactable
 {
-    Color _initialColor;
-    SpriteRenderer _spriteRenderer;
-    private void Awake()
-    {
-        _spriteRenderer = GetComponent<SpriteRenderer>();
-        _initialColor = _spriteRenderer.color;
-    }
 
     override
-    public void Interact()
+    public Interactable Interact()
     {
-        if(_spriteRenderer.color == Color.red)
-        {
-            _spriteRenderer.color = _initialColor;
-        }
-        else { 
-            _spriteRenderer.color = Color.red;
-        }
+        Debug.Log("Interacting!");
+        Destroy(this.gameObject, 1);
+        return null;
     }
 
 
